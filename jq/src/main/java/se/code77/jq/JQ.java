@@ -28,11 +28,6 @@ import se.code77.jq.Promise.StateSnapshot;
  * static counterparts to most instance methods on {@link Promise}.
  */
 public final class JQ {
-    /**
-     * Return value for Void callbacks
-     */
-    public static final Future<Void> VOID = null;
-
     private static final ExecutorService DEFAULT_EXECUTOR = Executors.newCachedThreadPool();
 
     /**

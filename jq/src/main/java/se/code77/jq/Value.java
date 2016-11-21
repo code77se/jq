@@ -14,6 +14,11 @@ import java.util.concurrent.TimeUnit;
  * @param <V> Type of the value being wrapped
  */
 public final class Value<V> implements Future<V> {
+    /**
+     * Return value for Void callbacks
+     */
+    public static final Value<Void> VOID = null;
+
     private final V mValue;
 
     private Value(V value) {

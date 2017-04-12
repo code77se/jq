@@ -536,7 +536,7 @@ class PromiseImpl<V> implements Promise<V> {
                         }, new OnRejectedCallback() {
                             @Override
                             public Future onRejected(Exception reason) throws Exception {
-                                rejectChild(link, mState.reason, RejectionInfo.Source.PARENT);
+                                rejectChild(link, reason, RejectionInfo.Source.PARENT);
                                 return null;
                             }
                         }, new OnProgressedCallback() {

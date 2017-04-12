@@ -520,7 +520,7 @@ class PromiseImpl<V> implements Promise<V> {
                             verbose("Link.onFulfilled returned " + nextValue);
                         } else {
                             verbose("Link has no onFulfilled, forward to next promise");
-                            link.nextPromise._resolve(mState.value);
+                            resolveChild(link, mState.value);
                             return;
                         }
                     }
@@ -530,7 +530,7 @@ class PromiseImpl<V> implements Promise<V> {
                         JQ.wrap(nextValue).then(new OnFulfilledCallback() {
                             @Override
                             public Future onFulfilled(Object value) throws Exception {
-                                link.nextPromise._resolve(value);
+                                resolveChild(link, value);
                                 return null;
                             }
                         }, new OnRejectedCallback() {
@@ -542,12 +542,12 @@ class PromiseImpl<V> implements Promise<V> {
                         }, new OnProgressedCallback() {
                             @Override
                             public void onProgressed(float progress) {
-                                link.nextPromise._notify(progress);
+                                notifyChild(link, progress);
                             }
                         }).done();
                     } else {
                         verbose("Link returned null, next promise will resolve directly");
-                        link.nextPromise._resolve(null);
+                        resolveChild(link, null);
                     }
                 } catch (UnhandledRejectionException e) {
                     throw e;
@@ -559,10 +559,19 @@ class PromiseImpl<V> implements Promise<V> {
         });
     }
 
+    private void resolveChild(Link<V, ?> link, Object value) {
+        //noinspection unchecked
+        link.nextPromise._resolve(value);
+    }
+
     private void rejectChild(Link<V, ?> link, Exception reason, RejectionInfo.Source source) {
         link.nextPromise._reject(
                 reason,
                 new RejectionInfo(source, this, link));
+    }
+
+    private void notifyChild(Link<V, ?> link, float progress) {
+        link.nextPromise._notify(progress);
     }
 
     private boolean isDebug() {

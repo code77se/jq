@@ -30,6 +30,16 @@ public final class Value<V> implements Future<V> {
      */
     public static final Value<Void> VOID = null;
 
+    /**
+     * Return value for Boolean callbacks
+     */
+    public static final Value<Boolean> TRUE = Value.wrap(true);
+
+    /**
+     * Return value for Boolean callbacks
+     */
+    public static final Value<Boolean> FALSE = Value.wrap(false);
+
     private final V mValue;
 
     private Value(V value) {

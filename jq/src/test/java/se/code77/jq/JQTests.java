@@ -42,7 +42,7 @@ public class JQTests extends AsyncTests {
     @Test
     public void all_isResolvedList() throws InterruptedException {
         Promise<List<String>> p = JQ.all(
-                Arrays.asList(JQ.resolve(TEST_VALUE1), JQ.defer(new SlowTask<>(TEST_VALUE2, 1000))));
+                Arrays.asList(JQ.resolve(TEST_VALUE1), JQ.work(new SlowTask<>(TEST_VALUE2, 1000))));
 
         Thread.sleep(500);
         assertPending(p);
@@ -63,7 +63,7 @@ public class JQTests extends AsyncTests {
     @Test
     public void all_isRejected() throws InterruptedException {
         Promise<List<String>> p = JQ.all(
-                JQ.resolve(TEST_VALUE1), JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 1000)));
+                JQ.resolve(TEST_VALUE1), JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 1000)));
 
         Thread.sleep(500);
         assertPending(p);
@@ -75,7 +75,7 @@ public class JQTests extends AsyncTests {
     public void all_isPending() throws InterruptedException {
         // at least one promise is not done -> resulting is pending forever
         Promise<List<String>> p = JQ.all(
-                JQ.defer(new SlowTask<>(TEST_VALUE1, 1000)), JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 2000)));
+                JQ.work(new SlowTask<>(TEST_VALUE1, 1000)), JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 2000)));
 
         Thread.sleep(500);
         assertPending(p);
@@ -86,7 +86,7 @@ public class JQTests extends AsyncTests {
     @Test
     public void any_isResolvedByFirst() throws InterruptedException {
         Promise<String> p = JQ.any(
-                Arrays.asList(JQ.defer(new SlowTask<>(TEST_VALUE1, 100)), JQ.defer(new SlowTask<>(TEST_VALUE2, 1000))));
+                Arrays.asList(JQ.work(new SlowTask<>(TEST_VALUE1, 100)), JQ.work(new SlowTask<>(TEST_VALUE2, 1000))));
 
         Thread.sleep(500);
         assertResolved(p, TEST_VALUE1);
@@ -96,8 +96,8 @@ public class JQTests extends AsyncTests {
     public void any_isResolvedByFirstAfterOtherRejected() throws InterruptedException {
         Promise<String> p = JQ.any(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 200)),
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 100))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 200)),
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 100))));
 
         Thread.sleep(500);
         assertResolved(p, TEST_VALUE1);
@@ -107,8 +107,8 @@ public class JQTests extends AsyncTests {
     public void any_isResolvedByLast() throws InterruptedException {
         Promise<String> p = JQ.any(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 1000)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 100))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 1000)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 100))));
 
         Thread.sleep(500);
         assertResolved(p, TEST_VALUE2);
@@ -118,8 +118,8 @@ public class JQTests extends AsyncTests {
     public void any_isResolvedByLastAfterOtherRejected() throws InterruptedException {
         Promise<String> p = JQ.any(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 100)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 200))));
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 100)),
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 200))));
 
         Thread.sleep(500);
         assertResolved(p, TEST_VALUE1);
@@ -129,8 +129,8 @@ public class JQTests extends AsyncTests {
     public void any_isRejected() throws InterruptedException {
         Promise<String> p = JQ.any(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 100)),
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON2), 200))));
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 100)),
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON2), 200))));
 
         Thread.sleep(500);
         assertRejected(p);
@@ -140,8 +140,8 @@ public class JQTests extends AsyncTests {
     public void any_isPending() throws InterruptedException {
         Promise<String> p = JQ.any(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 1000)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 2000))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 1000)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 2000))));
 
         Thread.sleep(500);
         assertPending(p);
@@ -151,8 +151,8 @@ public class JQTests extends AsyncTests {
     public void race_isResolvedByFirst() throws InterruptedException {
         Promise<String> p = JQ.race(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 100)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 1000))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 100)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 1000))));
 
         Thread.sleep(500);
         assertResolved(p, TEST_VALUE1);
@@ -162,8 +162,8 @@ public class JQTests extends AsyncTests {
     public void race_isResolvedByLast() throws InterruptedException {
         Promise<String> p = JQ.race(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 1000)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 100))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 1000)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 100))));
 
         Thread.sleep(500);
         assertResolved(p, TEST_VALUE2);
@@ -173,8 +173,8 @@ public class JQTests extends AsyncTests {
     public void race_isRejectedByFirst() throws InterruptedException {
         Promise<String> p = JQ.race(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 100)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 1000))));
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 100)),
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 1000))));
 
         Thread.sleep(500);
         assertRejected(p, TEST_REASON1);
@@ -184,8 +184,8 @@ public class JQTests extends AsyncTests {
     public void race_isRejectedByLast() throws InterruptedException {
         Promise<String> p = JQ.race(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 1000)),
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 100))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 1000)),
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 100))));
 
         Thread.sleep(500);
         assertRejected(p, TEST_REASON1);
@@ -195,8 +195,8 @@ public class JQTests extends AsyncTests {
     public void race_isPending() throws InterruptedException {
         Promise<String> p = JQ.race(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 1000)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 2000))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 1000)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 2000))));
 
         Thread.sleep(500);
         assertPending(p);
@@ -206,8 +206,8 @@ public class JQTests extends AsyncTests {
     public void allSettled_isResolvedAllResolved() throws InterruptedException {
         Promise<List<StateSnapshot<String>>> p = JQ.allSettled(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 100)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 1000))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 100)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 1000))));
 
         Thread.sleep(500);
         assertPending(p);
@@ -222,9 +222,9 @@ public class JQTests extends AsyncTests {
     public void allSettled_isResolvedAllResolvedOrRejected() throws InterruptedException {
         Promise<List<StateSnapshot<String>>> p = JQ.allSettled(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 100)),
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 200)),
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON2), 1000))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 100)),
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 200)),
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON2), 1000))));
 
         Thread.sleep(500);
         assertPending(p);
@@ -240,8 +240,8 @@ public class JQTests extends AsyncTests {
     public void allSettled_isResolvedAllRejected() throws InterruptedException {
         Promise<List<StateSnapshot<String>>> p = JQ.allSettled(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 100)),
-                        JQ.defer(new SlowTask<String>(newReason(TEST_REASON2), 1000))));
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 100)),
+                        JQ.work(new SlowTask<String>(newReason(TEST_REASON2), 1000))));
 
         Thread.sleep(500);
         assertPending(p);
@@ -256,8 +256,8 @@ public class JQTests extends AsyncTests {
     public void allSettled_isPending() throws InterruptedException {
         Promise<List<StateSnapshot<String>>> p = JQ.allSettled(
                 Arrays.asList(
-                        JQ.defer(new SlowTask<>(TEST_VALUE1, 100)),
-                        JQ.defer(new SlowTask<>(TEST_VALUE2, 1000))));
+                        JQ.work(new SlowTask<>(TEST_VALUE1, 100)),
+                        JQ.work(new SlowTask<>(TEST_VALUE2, 1000))));
 
         Thread.sleep(500);
         assertPending(p);

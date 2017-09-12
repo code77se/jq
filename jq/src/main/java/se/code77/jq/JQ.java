@@ -22,7 +22,7 @@ import se.code77.jq.Promise.StateSnapshot;
  * <br>
  * The JQ class itself contains static helpers and convenience methods related
  * to promises. For example {@link #defer()}, {@link #defer(DeferredHandler)}
- * and {@link #defer(Callable)} used to create new promises that will be
+ * and {@link #work(Callable)} used to create new promises that will be
  * connected to a task and returned to clients, as well as various helper
  * methods related to synchronization of multiple promises etc. It also contains
  * static counterparts to most instance methods on {@link Promise}.
@@ -177,14 +177,14 @@ public final class JQ {
      * @see #defer(DeferredHandler)
      */
     public static <V> Deferred<V> defer() {
-        return new Deferred<V>();
+        return new Deferred<>();
     }
 
     /**
      * Alternative way of creating a deferred object, offering a compact way of
      * inlining the code that handles the task and resolves/rejects the promise,
      * while returning the promise in one single method call. Note that unlike
-     * {@link #defer(Callable, Executor)}, the
+     * {@link #work(Callable, Executor)}, the
      * {@link DeferredHandler} will be invoked on the
      * calling thread and will have to manually spawn any background threads etc
      * as needed.
@@ -214,7 +214,7 @@ public final class JQ {
     }
 
     /**
-     * Alternative way of creating a deferred object by running the given task
+     * Alternative way of deferring work by running the given synchronous task
      * using a default cached thread pool executor, resolving/rejecting the
      * associated promise with the result of the task execution, and returning
      * the promise.
@@ -231,18 +231,28 @@ public final class JQ {
      *            used to resolve the promise, if any exception is thrown it
      *            will be used to reject the promise.
      * @return A new promise for the task
-     * @see #defer(Callable, Executor) 
+     * @see #work(Callable, Executor)
      */
-    public static <V> Promise<V> defer(final Callable<V> task) {
-        return defer(task, DEFAULT_EXECUTOR);
+    public static <V> Promise<V> work(final Callable<V> task) {
+        return work(task, DEFAULT_EXECUTOR);
     }
 
     /**
-     * Alternative way of creating a deferred object by running the given task
+     * Deprecated due to confusing name, use {@link #work(Callable)}
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static <V> Promise<V> defer(final Callable<V> task) {
+        return work(task);
+    }
+
+    /**
+     * Alternative way of deferring work by running the given synchronous task
      * using the given executor, resolving/rejecting the associated promise with
      * the result of the task execution, and returning the promise.
      *
-     * @see #defer() <pre>
+     * <pre>
      * Promise&lt;String&gt; p = JQ.defer(myExec, new Callable&lt;String&gt;() {
      *     public String call() {
      *         return &quot;Hello world&quot;;
@@ -255,8 +265,9 @@ public final class JQ {
      *            will be used to reject the promise.
      * @param executor Executor to run the task
      * @return A new promise for the task
+     * @see #work(Callable)
      */
-    public static <V> Promise<V> defer(final Callable<V> task, Executor executor) {
+    public static <V> Promise<V> work(final Callable<V> task, Executor executor) {
         final Deferred<V> deferred = defer();
 
         executor.execute(new Runnable() {
@@ -271,6 +282,16 @@ public final class JQ {
         });
 
         return deferred.promise;
+    }
+
+    /**
+     * Deprecated due to confusing name, use {@link #work(Callable)}
+     *
+     * @deprecated
+     */
+    @Deprecated
+    public static <V> Promise<V> defer(final Callable<V> task, Executor executor) {
+        return work(task, executor);
     }
 
     /**
@@ -301,7 +322,7 @@ public final class JQ {
      * @return A new promise
      */
     public static Promise<Void> resolve() {
-        return resolve((Void) null);
+        return resolve(null);
     }
 
     /**
@@ -321,7 +342,7 @@ public final class JQ {
         } else if (future instanceof Value) {
             return resolve(((Value<V>) future).get());
         } else {
-            return defer(new Callable<V>() {
+            return work(new Callable<V>() {
                 @Override
                 public V call() throws Exception {
                     try {
@@ -340,7 +361,6 @@ public final class JQ {
                             throw e;
                         }
                     }
-
                 }
             });
         }
@@ -376,10 +396,9 @@ public final class JQ {
      *         returned/rejected with the reason thrown from any of the callback
      *         handlers.
      */
-    public static <V, NV>
-            Promise<NV> when(
-                    final V value, OnFulfilledCallback<V, NV> onFulfilled,
-                    OnRejectedCallback<NV> onRejected) {
+    public static <V, NV> Promise<NV> when(final V value,
+                                           OnFulfilledCallback<V, NV> onFulfilled,
+                                           OnRejectedCallback<NV> onRejected) {
         return resolve(value).then(onFulfilled, onRejected);
     }
 
@@ -397,7 +416,7 @@ public final class JQ {
      *         handlers.
      */
     public static <V, NV> Promise<NV> when(final V value,
-            OnFulfilledCallback<V, NV> onFulfilled) {
+                                           OnFulfilledCallback<V, NV> onFulfilled) {
         return when(value, onFulfilled, null);
     }
 
@@ -415,10 +434,9 @@ public final class JQ {
      *         returned/rejected with the reason thrown from any of the callback
      *         handlers.
      */
-    public static <V, NV>
-            Promise<NV> when(
-                    final Value<V> value, OnFulfilledCallback<V, NV> onFulfilled,
-                    OnRejectedCallback<NV> onRejected) {
+    public static <V, NV> Promise<NV> when(final Value<V> value,
+                                           OnFulfilledCallback<V, NV> onFulfilled,
+                                           OnRejectedCallback<NV> onRejected) {
         return when(value.get(), onFulfilled, onRejected);
     }
 
@@ -436,7 +454,7 @@ public final class JQ {
      *         handlers.
      */
     public static <V, NV> Promise<NV> when(final Value<V> value,
-            OnFulfilledCallback<V, NV> onFulfilled) {
+                                           OnFulfilledCallback<V, NV> onFulfilled) {
         return when(value, onFulfilled, null);
     }
 
@@ -454,7 +472,7 @@ public final class JQ {
      *         handlers.
      */
     public static <V, NV> Promise<NV> fail(final V value,
-            OnRejectedCallback<NV> onRejected) {
+                                           OnRejectedCallback<NV> onRejected) {
         return when(value, null, onRejected);
     }
 
@@ -472,7 +490,7 @@ public final class JQ {
      *         handlers.
      */
     public static <V, NV> Promise<NV> fail(final Value<V> value,
-            OnRejectedCallback<NV> onRejected) {
+                                           OnRejectedCallback<NV> onRejected) {
         return fail(value.get(), onRejected);
     }
 
@@ -486,8 +504,8 @@ public final class JQ {
      * @param onFulfilled Fulfillment handler
      * @param onRejected Rejection handler
      */
-    public static <V> void done(
-            final V value, OnFulfilledCallback<V, Void> onFulfilled,
+    public static <V> void done(final V value,
+                                OnFulfilledCallback<V, Void> onFulfilled,
             OnRejectedCallback<Void> onRejected) {
         resolve(value).done(onFulfilled, onRejected);
     }
@@ -502,9 +520,9 @@ public final class JQ {
      * @param onFulfilled Fulfillment handler
      * @param onRejected Rejection handler
      */
-    public static <V> void done(
-            final Value<V> value, OnFulfilledCallback<V, Void> onFulfilled,
-            OnRejectedCallback<Void> onRejected) {
+    public static <V> void done(final Value<V> value,
+                                OnFulfilledCallback<V, Void> onFulfilled,
+                                OnRejectedCallback<Void> onRejected) {
         done(value.get(), onFulfilled, onRejected);
     }
 
@@ -518,7 +536,7 @@ public final class JQ {
      * @param onFulfilled Fulfillment handler
      */
     public static <V> void done(final V value,
-            OnFulfilledCallback<V, Void> onFulfilled) {
+                                OnFulfilledCallback<V, Void> onFulfilled) {
         done(value, onFulfilled, null);
     }
 
@@ -532,7 +550,7 @@ public final class JQ {
      * @param onFulfilled Fulfillment handler
      */
     public static <V> void done(final Value<V> value,
-            OnFulfilledCallback<V, Void> onFulfilled) {
+                                OnFulfilledCallback<V, Void> onFulfilled) {
         done(value.get(), onFulfilled);
     }
 

@@ -162,7 +162,7 @@ public class PromiseTests extends AsyncTests {
     public void deferred_isResolvedWithResolvedPromise() throws Exception {
         final Deferred<Integer> deferred = JQ.defer();
         Promise<Integer> p = deferred.promise;
-        Future<Integer> f = JQ.defer(new SlowTask<>(42, 500));
+        Future<Integer> f = JQ.work(new SlowTask<>(42, 500));
 
         assertPending(p);
         deferred.resolve(f);
@@ -175,7 +175,7 @@ public class PromiseTests extends AsyncTests {
     public void deferred_isResolvedWithRejectedPromise() throws Exception {
         final Deferred<Integer> deferred = JQ.defer();
         Promise<Integer> p = deferred.promise;
-        Future<Integer> f = JQ.defer(new SlowTask<Integer>(newReason(TEST_REASON1), 500));
+        Future<Integer> f = JQ.work(new SlowTask<Integer>(newReason(TEST_REASON1), 500));
 
         assertPending(p);
         deferred.resolve(f);
@@ -291,7 +291,7 @@ public class PromiseTests extends AsyncTests {
     public void chained_isResolvedWithPromise() throws InterruptedException {
         // OnFulfilled returns new Promise, chained fulfillment handlers are invoked
 
-        resolveChain(JQ.defer(new SlowTask<>(42)), 42);
+        resolveChain(JQ.work(new SlowTask<>(42)), 42);
     }
 
     @Test
@@ -408,7 +408,7 @@ public class PromiseTests extends AsyncTests {
     @Test
     public void timeout_isResolvedAfterTimeout() throws InterruptedException {
         // Promise is resolved but too late, TimeoutException is thrown
-        Promise<String> p = JQ.defer(new SlowTask<>(TEST_VALUE1, 2000)).timeout(1000);
+        Promise<String> p = JQ.work(new SlowTask<>(TEST_VALUE1, 2000)).timeout(1000);
 
         BlockingDataHolder<String> then1 = new BlockingDataHolder<>();
         p.then(new DataFulfilledCallback<>(then1));
@@ -425,7 +425,7 @@ public class PromiseTests extends AsyncTests {
     @Test
     public void timeout_isRejectedAfterTimeout() throws InterruptedException {
         // Promise is rejected but too late, TimeoutException is thrown
-        Promise<String> p = JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 2000)).timeout(1000);
+        Promise<String> p = JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 2000)).timeout(1000);
 
         Thread.sleep(500);
         assertPending(p);
@@ -458,7 +458,7 @@ public class PromiseTests extends AsyncTests {
     @Test
     public void delay_isPending() throws InterruptedException {
         // New promise is also pending after delay has passed if original promise is not resolved yet
-        Promise<String> p = JQ.defer(new SlowTask<>(TEST_VALUE1, 2000)).delay(1000);
+        Promise<String> p = JQ.work(new SlowTask<>(TEST_VALUE1, 2000)).delay(1000);
 
         Thread.sleep(1500);
         assertPending(p);
@@ -528,7 +528,7 @@ public class PromiseTests extends AsyncTests {
     @Test
     public void join_isThisRejected() throws InterruptedException {
         // this rejected, that resolved -> new promise should be rejected
-        Promise<String> p1 = JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 0));
+        Promise<String> p1 = JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 0));
         Promise<String> p2 = JQ.resolve(TEST_VALUE1);
         Promise<String> p3 = p1.join(p2);
 
@@ -540,7 +540,7 @@ public class PromiseTests extends AsyncTests {
     public void join_isThatRejected() throws InterruptedException {
         // this resolved, that rejected -> new promise should be rejected
         Promise<String> p1 = JQ.resolve(TEST_VALUE1);
-        Promise<String> p2 = JQ.defer(new SlowTask<String>(newReason(TEST_REASON1), 0));
+        Promise<String> p2 = JQ.work(new SlowTask<String>(newReason(TEST_REASON1), 0));
         Promise<String> p3 = p1.join(p2);
 
         Thread.sleep(500);
@@ -550,7 +550,7 @@ public class PromiseTests extends AsyncTests {
     @Test
     public void join_isPending() throws InterruptedException {
         // this or that is pending -> new promise should be pending
-        Promise<String> p1 = JQ.defer(new SlowTask<>(TEST_VALUE1, 1000));
+        Promise<String> p1 = JQ.work(new SlowTask<>(TEST_VALUE1, 1000));
         Promise<String> p2 = JQ.resolve(TEST_VALUE1);
         Promise<String> p3 = p1.join(p2);
 
@@ -560,7 +560,7 @@ public class PromiseTests extends AsyncTests {
         assertResolved(p3, TEST_VALUE1);
 
         p1 = JQ.resolve(TEST_VALUE1);
-        p2 = JQ.defer(new SlowTask<>(TEST_VALUE1, 1000));
+        p2 = JQ.work(new SlowTask<>(TEST_VALUE1, 1000));
         p3 = p1.join(p2);
 
         Thread.sleep(500);

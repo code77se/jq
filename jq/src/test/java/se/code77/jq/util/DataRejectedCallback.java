@@ -4,7 +4,7 @@ import java.util.concurrent.Future;
 
 import se.code77.jq.Promise.OnRejectedCallback;
 
-public class DataRejectedCallback<NV> extends DataCallback<Exception, NV> implements OnRejectedCallback {
+public class DataRejectedCallback<NV> extends DataCallback<Exception, NV> implements OnRejectedCallback<NV> {
     public DataRejectedCallback(BlockingDataHolder<Exception> holder) {
         super(holder);
     }

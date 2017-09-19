@@ -498,11 +498,32 @@ public interface Promise<V> extends Future<V> {
     }
 
     /**
+     * Callback interface invoked for promises that are either fulfilled or rejected.
+     *
+     */
+    public interface OnFinallyFutureCallback {
+        /**
+         * Called when a promise is either fulfilled or rejected.
+         * This method may return a value or a promise.
+         * * If it returns a promise, the next promise will wait for the returned promise to be resolved.
+         * * If the returned promise is resolved, the next promise will not be affected but simply resolved with its original value.
+         * * If the returned promise is rejected OR if this method throws an exception the next promise will be rejected with the reason produced by this method.
+         * * If it returns a value, the next promise will be resolved with its original value and not affected by the execution of this method.
+         *
+         * @throws Exception An exception
+         */
+        Future<Void> onFinally() throws Exception;
+    }
+
+    /**
      * Observe the state of this promise by adding a finally callback which
      * will be called when the promise is either fulfilled or rejected.
      * Note that this method MUST be run on a thread implementing an event loop.
      * Analogous to a finally clause in synchronous code.
      *
+     * This is a convenience method for a finally callback that does not return anything.
+     *
+     * @see #fin(OnFinallyFutureCallback)
      * @see #then(OnFulfilledCallback, OnRejectedCallback)
      * @param onFinally finally callback
      * @return A new promise that inherits the state of the previous promise, unless the finally
@@ -510,6 +531,23 @@ public interface Promise<V> extends Future<V> {
      * exception.
      */
     public Promise<V> fin(OnFinallyCallback onFinally);
+
+    /**
+     * Observe the state of this promise by adding a finally callback which
+     * will be called when the promise is either fulfilled or rejected.
+     * Note that this method MUST be run on a thread implementing an event loop.
+     * Analogous to a finally clause in synchronous code.
+     *
+     * If the finally callback returns a promise, the next promise will wait for that promise to be resolved before continuing.
+     *
+     * @see #fin(OnFinallyCallback)
+     * @see #then(OnFulfilledCallback, OnRejectedCallback)
+     * @param onFinally finally callback
+     * @return A new promise that inherits the state of the previous promise, unless the finally
+     * callback throws an exception or returns a rejected promise, in which case the new promise will be rejected with that
+     * exception.
+     */
+    public Promise<V> fin(OnFinallyFutureCallback onFinally);
 
     /**
      * Adds the supplied callback handlers, just like calling

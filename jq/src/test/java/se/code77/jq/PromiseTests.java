@@ -104,7 +104,7 @@ public class PromiseTests extends AsyncTests {
         Promise<Void> p = JQ.reject(newReason(TEST_REASON1));
 
         BlockingDataHolder<Exception> fail1 = new BlockingDataHolder<>();
-        p.fail(new DataRejectedCallback<>(fail1));
+        p.fail(new DataRejectedCallback<Void>(fail1));
 
         assertData(fail1, 2000, newReason(TEST_REASON1));
         assertRejected(p, TEST_REASON1);
@@ -115,7 +115,7 @@ public class PromiseTests extends AsyncTests {
         Promise<String> p = JQ.resolve(TEST_VALUE1);
 
         BlockingDataHolder<Exception> fail1 = new BlockingDataHolder<>();
-        p.fail(new DataRejectedCallback<>(fail1));
+        p.fail(new DataRejectedCallback<String>(fail1));
 
         assertNoData(fail1, 2000);
     }
@@ -334,7 +334,7 @@ public class PromiseTests extends AsyncTests {
         final BlockingDataHolder<Exception> fail1 = new BlockingDataHolder<>();
 
         JQ.resolve(TEST_VALUE1).fail(
-                new DataRejectedCallback<>(fail1)).then(
+                new DataRejectedCallback<String>(fail1)).then(
                 new DataFulfilledCallback<>(then1));
 
         assertData(then1, 2000, TEST_VALUE1);
@@ -717,13 +717,45 @@ public class PromiseTests extends AsyncTests {
             public Future<String> onRejected(Exception reason) throws Exception {
                 return Value.wrap(TEST_VALUE2);
             }
-        }).fin(new Promise.OnFinallyCallback() {
+        }).fin(new Promise.OnFinallyFutureCallback() {
             @Override
-            public void onFinally() throws Exception {
+            public Future<Void> onFinally() throws Exception {
                 throw newReason(TEST_REASON2);
             }
         }).fail(new DataRejectedCallback<String>(fail));
 
+        assertData(fail, 500, newReason(TEST_REASON2));
+    }
+
+    @Test
+    public void finally_isCalledAndRejectsForResolved() {
+        // Promise is resolved -> fin is called but returns a rejected promise, next promise is rejected with that reason
+        // Equivalent to:
+        // try {
+        //     try {
+        //         return "Hello";
+        //     } catch (Exception e) {
+        //         // swallow
+        //     } finally {
+        //         throw FEX;
+        //     }
+        // } catch (Exception e) {
+        //     assert(FEX == e)
+        //     catchCalled = true;
+        // }
+        // assert(catchCalled);
+        final BlockingDataHolder<Boolean> fin = new BlockingDataHolder<>();
+        final BlockingDataHolder<Exception> fail = new BlockingDataHolder<>();
+
+        JQ.resolve(TEST_VALUE1).fail(new Promise.OnRejectedCallback<String>() {
+            @Override
+            public Future<String> onRejected(Exception reason) throws Exception {
+                return Value.wrap(TEST_VALUE2);
+            }
+        }).fin(new FinallyCalledCallback(fin, JQ.<Void>reject(newReason(TEST_REASON2))))
+                .fail(new DataRejectedCallback<String>(fail));
+
+        assertData(fin, 500, true);
         assertData(fail, 500, newReason(TEST_REASON2));
     }
 
@@ -751,13 +783,45 @@ public class PromiseTests extends AsyncTests {
             public Future<String> onRejected(Exception reason) throws Exception {
                 return Value.wrap(TEST_VALUE2);
             }
-        }).fin(new Promise.OnFinallyCallback() {
+        }).fin(new Promise.OnFinallyFutureCallback() {
             @Override
-            public void onFinally() throws Exception {
+            public Future<Void> onFinally() throws Exception {
                 throw newReason(TEST_REASON2);
             }
         }).fail(new DataRejectedCallback<String>(fail));
 
+        assertData(fail, 500, newReason(TEST_REASON2));
+    }
+
+    @Test
+    public void finally_isCalledAndRejectsForRejected() {
+        // Promise is rejected -> fin is called but returns rejected promise, next promise is rejected with that reason
+        // Equivalent to:
+        // try {
+        //     try {
+        //         throw EX;
+        //     } catch (Exception e) {
+        //         // swallow
+        //     } finally {
+        //         throw FEX;
+        //     }
+        // } catch (Exception e) {
+        //     assert(FEX == e)
+        //     catchCalled = true;
+        // }
+        // assert(catchCalled);
+        final BlockingDataHolder<Boolean> fin = new BlockingDataHolder<>();
+        final BlockingDataHolder<Exception> fail = new BlockingDataHolder<>();
+
+        JQ.<String>reject(newReason(TEST_REASON1)).fail(new Promise.OnRejectedCallback<String>() {
+            @Override
+            public Future<String> onRejected(Exception reason) throws Exception {
+                return Value.wrap(TEST_VALUE2);
+            }
+        }).fin(new FinallyCalledCallback(fin, JQ.<Void>reject(newReason(TEST_REASON2))))
+                .fail(new DataRejectedCallback<String>(fail));
+
+        assertData(fin, 500, true);
         assertData(fail, 500, newReason(TEST_REASON2));
 
     }
@@ -779,6 +843,30 @@ public class PromiseTests extends AsyncTests {
 
         assertData(fin, 500, true);
         assertData(then, 500, TEST_VALUE1);
+    }
+
+    @Test
+    public void finally_isCalledAndResolvesForResolvedWithoutFail() throws InterruptedException {
+        // Promise is resolved with no fail() -> fin is called, next promise is resolved with same value,
+        // but not until the promise returned by fin is resolved.
+        // Equivalent to:
+        // try {
+        //     return "Hello";
+        // } finally {
+        //     finallyCalled = true;
+        // }
+        // assert(finallyCalled);
+        final BlockingDataHolder<Boolean> fin = new BlockingDataHolder<>();
+        final BlockingDataHolder<String> then = new BlockingDataHolder<>();
+
+        Promise<Object> p = JQ.resolve(TEST_VALUE1)
+                .fin(new FinallyCalledCallback(fin, JQ.work(new SlowTask<>((Void)null, 1000))))
+                .then(new DataFulfilledCallback<>(then));
+
+        assertData(fin, 500, true);
+        Thread.sleep(500);
+        assertPending(p);
+        assertData(then, 1000, TEST_VALUE1);
     }
 
     @Test
@@ -805,6 +893,37 @@ public class PromiseTests extends AsyncTests {
 
         assertData(fin, 500, true);
         assertData(fail, 500, newReason(TEST_REASON1));
+    }
+
+    @Test
+    public void finally_isCalledAndResolvesForRejectedWithoutFail() throws InterruptedException {
+        // Promise is rejected with no fail() -> fin is called, next promise is rejected with same reason,
+        // but not until the promise returned by fin is resolved.
+        // Equivalent to:
+        // try {
+        //     try {
+        //         throw EX;
+        //     } finally {
+        //         finallyCalled = true;
+        //     }
+        //     assert(false);
+        // } catch (Exception e) {
+        //     assert(EX == e)
+        //     catchCalled = true;
+        // }
+        // assert(finallyCalled);
+        // assert(catchCalled);
+        final BlockingDataHolder<Boolean> fin = new BlockingDataHolder<>();
+        final BlockingDataHolder<Exception> fail = new BlockingDataHolder<>();
+
+        Promise<String> p = JQ.<String>reject(newReason(TEST_REASON1))
+                .fin(new FinallyCalledCallback(fin, JQ.work(new SlowTask<>((Void) null, 1000))))
+                .fail(new DataRejectedCallback<String>(fail));
+
+        assertData(fin, 500, true);
+        Thread.sleep(500);
+        assertPending(p);
+        assertData(fail, 1000, newReason(TEST_REASON1));
     }
 
     @Test

@@ -231,6 +231,31 @@ class PromiseImpl<V> implements Promise<V> {
     }
 
     @Override
+    public Promise<V> fin(final OnFinallyFutureCallback onFinally) {
+        return then(new OnFulfilledCallback<V, V>() {
+            @Override
+            public Future<V> onFulfilled(final V value) throws Exception {
+                return JQ.wrap(onFinally.onFinally()).then(new OnFulfilledCallback<Void, V>() {
+                    @Override
+                    public Future<? extends V> onFulfilled(Void v) throws Exception {
+                        return Value.wrap(value);
+                    }
+                });
+            }
+        }, new OnRejectedCallback<V>() {
+            @Override
+            public Future<V> onRejected(final Exception reason) throws Exception {
+                return JQ.wrap(onFinally.onFinally()).then(new OnFulfilledCallback<Void, V>() {
+                    @Override
+                    public Future<? extends V> onFulfilled(Void v) throws Exception {
+                        throw reason;
+                    }
+                });
+            }
+        });
+    }
+
+    @Override
     public final synchronized void done(
             OnFulfilledCallback<V, Void> onFulfilled, OnRejectedCallback<Void> onRejected) {
         // This terminates the chain by making the next promise terminating,

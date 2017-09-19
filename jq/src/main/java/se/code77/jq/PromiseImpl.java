@@ -213,19 +213,12 @@ class PromiseImpl<V> implements Promise<V> {
 
     @Override
     public Promise<V> fin(final OnFinallyCallback onFinally) {
-        return then(new OnFulfilledCallback<V, V>() {
+        return fin(new OnFinallyFutureCallback() {
             @Override
-            public Future<V> onFulfilled(V value) throws Exception {
+            public Future<Void> onFinally() throws Exception {
                 onFinally.onFinally();
 
-                return Value.wrap(value);
-            }
-        }, new OnRejectedCallback<V>() {
-            @Override
-            public Future<V> onRejected(Exception reason) throws Exception {
-                onFinally.onFinally();
-
-                throw reason;
+                return Value.VOID;
             }
         });
     }

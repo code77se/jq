@@ -37,60 +37,47 @@ public class AndroidConfig extends Config {
         }
     }
 
-    public static class AndroidLogger implements Logger {
-        private static final String LOG_TAG = "Promise";
-
-        private final LogLevel mLogLevel;
+    public static class AndroidLogger extends AbstractLogger {
+        private final String mTag;
 
         public AndroidLogger(LogLevel logLevel) {
-            mLogLevel = logLevel;
+            this(logLevel, "Promise");
         }
 
-        private boolean hasLevel(LogLevel level) {
-            return mLogLevel.ordinal() <= level.ordinal();
-        }
-
-        @Override
-        public void verbose(String s) {
-            if (hasLevel(LogLevel.VERBOSE)) {
-                Log.v(LOG_TAG, s);
-            }
+        public AndroidLogger(LogLevel logLevel, String tag) {
+            super(logLevel);
+            mTag = tag;
         }
 
         @Override
-        public void debug(String s) {
-            if (hasLevel(LogLevel.DEBUG)) {
-                Log.d(LOG_TAG, s);
-            }
-        }
+        protected void log(LogLevel level, String msg) {
+            switch (level) {
+                case VERBOSE:
+                    Log.v(mTag, msg);
+                    break;
 
-        @Override
-        public void info(String s) {
-            if (hasLevel(LogLevel.INFO)) {
-                Log.i(LOG_TAG, s);
-            }
-        }
+                case DEBUG:
+                    Log.d(mTag, msg);
+                    break;
 
-        @Override
-        public void warn(String s) {
-            if (hasLevel(LogLevel.WARN)) {
-                Log.w(LOG_TAG, s);
-            }
-        }
+                case INFO:
+                    Log.i(mTag, msg);
+                    break;
 
-        @Override
-        public void error(String s) {
-            if (hasLevel(LogLevel.ERROR)) {
-                Log.e(LOG_TAG, s);
+                case WARN:
+                    Log.w(mTag, msg);
+                    break;
+
+                case ERROR:
+                    Log.e(mTag, msg);
+                    break;
             }
         }
     }
 
     @Override
-    public Dispatcher createDispatcher() {
-        Dispatcher d = super.createDispatcher();
-
-        return d != null ? d : mDispatchers.get(Looper.getMainLooper().getThread());
+    protected Dispatcher getDefaultDispatcher() {
+        return getDispatcher(Looper.getMainLooper().getThread());
     }
 
     @Override

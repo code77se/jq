@@ -87,10 +87,8 @@ public class AndroidConfig extends Config {
     }
 
     @Override
-    public Dispatcher createDispatcher() {
-        Dispatcher d = super.createDispatcher();
-
-        return d != null ? d : mDispatchers.get(Looper.getMainLooper().getThread());
+    protected Dispatcher getDefaultDispatcher() {
+        return getDispatcher(Looper.getMainLooper().getThread());
     }
 
     @Override

@@ -20,10 +20,8 @@ public class TestConfig {
 
             Config config = new Config(false, LogLevel.VERBOSE) {
                 @Override
-                public Dispatcher createDispatcher() {
-                    Dispatcher d = super.createDispatcher();
-
-                    return d != null ? d : mDispatchers.get(sTestThread);
+                protected Dispatcher getDefaultDispatcher() {
+                    return getDispatcher(sTestThread);
                 }
 
                 @Override

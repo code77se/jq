@@ -151,7 +151,17 @@ public abstract class Config {
      * @return Dispatcher
      */
     public Dispatcher createDispatcher() {
-        return mDispatchers.get(Thread.currentThread());
+        Dispatcher d = getDispatcher(Thread.currentThread());
+
+        return d != null ? d : getDefaultDispatcher();
+    }
+
+    protected Dispatcher getDispatcher(Thread thread) {
+        return mDispatchers.get(thread);
+    }
+
+    protected Dispatcher getDefaultDispatcher() {
+        return null;
     }
 
     /**

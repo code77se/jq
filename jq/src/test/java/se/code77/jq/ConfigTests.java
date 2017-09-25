@@ -5,7 +5,7 @@ import org.junit.Test;
 import se.code77.jq.config.Config;
 import se.code77.jq.util.AsyncTests;
 import se.code77.jq.util.BlockingDataHolder;
-import se.code77.jq.util.TestConfig;
+import se.code77.jq.util.TestEnv;
 
 import static se.code77.jq.util.Assert.*;
 
@@ -31,7 +31,7 @@ public class ConfigTests extends AsyncTests {
         };
 
         assertFalse(config.isDispatcherThread(Thread.currentThread()));
-        assertTrue(config.isDispatcherThread(TestConfig.getTestThread()));
+        assertTrue(config.isDispatcherThread(TestEnv.getTestThread()));
 
         config.registerDispatcher(thread, dispatcher);
         assertTrue(config.isDispatcherThread(thread));

@@ -82,6 +82,51 @@ public abstract class Config {
         ERROR
     }
 
+    protected static abstract class AbstractLogger implements Config.Logger {
+        private final LogLevel mLogLevel;
+
+        public AbstractLogger(LogLevel logLevel) {
+            mLogLevel = logLevel;
+        }
+
+        private boolean hasLevel(LogLevel level) {
+            return mLogLevel.ordinal() <= level.ordinal();
+        }
+
+        private void logIfLevel(LogLevel level, String s) {
+            if (hasLevel(level)) {
+                log(level, s);
+            }
+        }
+
+        protected abstract void log(LogLevel level, String msg);
+
+        @Override
+        public final void verbose(String s) {
+            logIfLevel(LogLevel.VERBOSE, s);
+        }
+
+        @Override
+        public final void debug(String s) {
+            logIfLevel(LogLevel.DEBUG, s);
+        }
+
+        @Override
+        public final void info(String s) {
+            logIfLevel(LogLevel.INFO, s);
+        }
+
+        @Override
+        public final void warn(String s) {
+            logIfLevel(LogLevel.WARN, s);
+        }
+
+        @Override
+        public final void error(String s) {
+            logIfLevel(LogLevel.ERROR, s);
+        }
+    }
+
     private static Config CONFIG;
 
     /**

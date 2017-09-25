@@ -31,7 +31,7 @@ public class EventThread extends Thread {
         System.out.println(msg);
     }
 
-    private final synchronized Event getEvent() throws InterruptedException {
+    private synchronized Event getEvent() throws InterruptedException {
         while (!Thread.interrupted()) {
             Event e = mEvents.peek();
 
@@ -82,7 +82,7 @@ public class EventThread extends Thread {
         notifyAll();
     }
 
-    private final void setIdle(boolean idle) {
+    private void setIdle(boolean idle) {
         synchronized (mIdleLock) {
             mIdle = idle;
             mIdleLock.notifyAll();

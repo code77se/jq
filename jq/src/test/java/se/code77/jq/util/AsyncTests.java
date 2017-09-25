@@ -30,11 +30,11 @@ public class AsyncTests {
 
     @Before
     public void setup() {
-        TestConfig.start();
+        TestEnv.start();
     }
 
     @After
     public void tearDown() {
-        TestConfig.stop();
+        TestEnv.stop();
     }
 }

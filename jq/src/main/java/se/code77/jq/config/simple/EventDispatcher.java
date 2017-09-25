@@ -10,12 +10,12 @@ public class EventDispatcher implements Config.Dispatcher {
     }
 
     @Override
-    public void dispatch(Runnable r) {
+    public final void dispatch(Runnable r) {
         dispatch(r, 0);
     }
 
     @Override
-    public void dispatch(Runnable r, long ms) {
+    public final void dispatch(Runnable r, long ms) {
         mThread.post(r, ms);
     }
 

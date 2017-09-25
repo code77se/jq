@@ -22,7 +22,7 @@ import se.code77.jq.util.DataProgressedCallback;
 import se.code77.jq.util.DataRejectedCallback;
 import se.code77.jq.util.FinallyCalledCallback;
 import se.code77.jq.util.SlowTask;
-import se.code77.jq.util.TestConfig;
+import se.code77.jq.util.TestEnv;
 
 import static se.code77.jq.util.Assert.*;
 
@@ -379,7 +379,7 @@ public class PromiseTests extends AsyncTests {
                 }).done();
 
         Thread.sleep(1000);
-        UnhandledRejectionException unhandledException = TestConfig.getTestThread().getUnhandledException();
+        UnhandledRejectionException unhandledException = TestEnv.getTestThread().getUnhandledException();
         assertNotNull(unhandledException);
         assertTrue(UnhandledRejectionException.class.isAssignableFrom(unhandledException.getClass()));
     }

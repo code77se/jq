@@ -17,7 +17,7 @@ import se.code77.jq.Promise.State;
 import se.code77.jq.Promise.StateSnapshot;
 import se.code77.jq.util.AsyncTests;
 import se.code77.jq.util.SlowTask;
-import se.code77.jq.util.TestConfig;
+import se.code77.jq.util.TestEnv;
 
 public class JQTests extends AsyncTests {
     @Test
@@ -35,7 +35,7 @@ public class JQTests extends AsyncTests {
     @Test
     public void reject_isRejected() throws InterruptedException {
         Promise<Void> p = JQ.reject(newReason(TEST_REASON1));
-        TestConfig.waitForIdle();
+        TestEnv.waitForIdle();
         assertRejected(p, TEST_REASON1);
     }
 
@@ -55,7 +55,7 @@ public class JQTests extends AsyncTests {
         Promise<List<String>> p = JQ.all(
                 JQ.resolve(TEST_VALUE1), JQ.resolve(TEST_VALUE2));
 
-        TestConfig.waitForIdle();
+        TestEnv.waitForIdle();
         Thread.sleep(500);
         assertResolved(p, Arrays.asList(TEST_VALUE1, TEST_VALUE2));
     }
@@ -276,7 +276,7 @@ public class JQTests extends AsyncTests {
 
         Promise<String> p = JQ.wrap(future);
 
-        TestConfig.waitForIdle();
+        TestEnv.waitForIdle();
         assertResolved(p, TEST_VALUE1);
     }
 
@@ -284,7 +284,7 @@ public class JQTests extends AsyncTests {
     public void wrap_isResolvedForNull() throws InterruptedException {
         Promise<String> p = JQ.wrap(null);
 
-        TestConfig.waitForIdle();
+        TestEnv.waitForIdle();
         assertResolved(p, null);
     }
 

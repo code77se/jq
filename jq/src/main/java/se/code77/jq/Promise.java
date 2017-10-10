@@ -142,7 +142,7 @@ public interface Promise<V> extends Future<V> {
      * @param <E> Type of exception to be handled by this rejection handler
      *
      */
-    public interface OnRejectedBaseCallback<NV, E extends Exception> {
+    public interface OnRejectedBaseCallback<E extends Exception, NV> {
         /**
          * The promise on which this callback was registered has been rejected.
          *
@@ -161,7 +161,7 @@ public interface Promise<V> extends Future<V> {
      * @param <NV> Type of the value returned by the callback, which will be
      *            used to resolve the next promise in the chain.
      */
-    public interface OnRejectedCallback<NV> extends OnRejectedBaseCallback<NV, Exception> {
+    public interface OnRejectedCallback<NV> extends OnRejectedBaseCallback<Exception, NV> {
     }
 
     /**
@@ -493,7 +493,7 @@ public interface Promise<V> extends Future<V> {
      *         returned/rejected with the reason thrown from the supplied
      *         callback handler.
      */
-    public <E extends Exception> Promise<V> fail(Class<E> reasonClass, OnRejectedBaseCallback<V, E> onRejected);
+    public <E extends Exception> Promise<V> fail(Class<E> reasonClass, OnRejectedBaseCallback<E, V> onRejected);
 
     /**
      * Observe the progress of this promise by adding a progress callback which

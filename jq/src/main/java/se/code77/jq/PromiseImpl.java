@@ -207,7 +207,7 @@ class PromiseImpl<V> implements Promise<V> {
     }
 
     @Override
-    public <E extends Exception> Promise<V> fail(final Class<E> reasonClass, final OnRejectedBaseCallback<V, E> onRejected) {
+    public <E extends Exception> Promise<V> fail(final Class<E> reasonClass, final OnRejectedBaseCallback<E, V> onRejected) {
         return fail(new OnRejectedCallback<V>() {
             @Override
             public Future<? extends V> onRejected(Exception reason) throws Exception {

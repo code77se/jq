@@ -3,9 +3,8 @@ package se.code77.jq.util;
 import java.util.concurrent.Future;
 
 import se.code77.jq.Promise;
-import se.code77.jq.Promise.OnRejectedCallback;
 
-public class DataRejectedBaseCallback<E extends Exception, NV> extends DataCallback<E, NV> implements Promise.OnRejectedBaseCallback<NV, E> {
+public class DataRejectedBaseCallback<E extends Exception, NV> extends DataCallback<E, NV> implements Promise.OnRejectedBaseCallback<E, NV> {
     public DataRejectedBaseCallback(BlockingDataHolder<E> holder) {
         super(holder);
     }

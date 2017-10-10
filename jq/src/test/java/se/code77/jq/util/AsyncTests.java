@@ -12,7 +12,7 @@ public class AsyncTests {
     protected static final String TEST_REASON1 = "Reason 1";
     protected static final String TEST_REASON2 = "Reason 2";
 
-    private static class TestException extends Exception {
+    public static class TestException extends Exception {
         public TestException(String message) {
             super(message);
         }
@@ -24,7 +24,7 @@ public class AsyncTests {
         }
     }
 
-    public static Exception newReason(String reason) {
+    public static TestException newReason(String reason) {
         return new TestException(reason);
     }
 

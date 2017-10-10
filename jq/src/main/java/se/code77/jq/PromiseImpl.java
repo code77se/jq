@@ -207,6 +207,21 @@ class PromiseImpl<V> implements Promise<V> {
     }
 
     @Override
+    public <E extends Exception> Promise<V> fail(final Class<E> reasonClass, final OnRejectedBaseCallback<E, V> onRejected) {
+        return fail(new OnRejectedCallback<V>() {
+            @Override
+            public Future<? extends V> onRejected(Exception reason) throws Exception {
+                if (reasonClass.isInstance(reason)) {
+                    //noinspection unchecked
+                    return onRejected.onRejected((E)reason);
+                } else {
+                    throw reason;
+                }
+            }
+        });
+    }
+
+    @Override
     public final Promise<V> progress(OnProgressedCallback onProgressed) {
         return addLink(null, null, onProgressed, false);
     }

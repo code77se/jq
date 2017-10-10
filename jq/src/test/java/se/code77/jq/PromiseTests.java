@@ -19,6 +19,7 @@ import se.code77.jq.util.AsyncTests;
 import se.code77.jq.util.BlockingDataHolder;
 import se.code77.jq.util.DataFulfilledCallback;
 import se.code77.jq.util.DataProgressedCallback;
+import se.code77.jq.util.DataRejectedBaseCallback;
 import se.code77.jq.util.DataRejectedCallback;
 import se.code77.jq.util.FinallyCalledCallback;
 import se.code77.jq.util.SlowTask;
@@ -1225,6 +1226,31 @@ public class PromiseTests extends AsyncTests {
 
         assertData(then1, 2000, TEST_VALUE2);
         assertResolved(p, TEST_VALUE2);
+    }
 
+    @Test
+    public void rejected_isCaughtByMatchingSubException() throws Exception {
+        TestException reason = newReason(TEST_REASON1);
+        Promise<Void> p = JQ.reject(reason);
+
+        BlockingDataHolder<TestException> fail1 = new BlockingDataHolder<>();
+        p = p.fail(TestException.class, new DataRejectedBaseCallback<TestException, Void>(fail1));
+
+        assertData(fail1, 2000, reason);
+        Thread.sleep(500);
+        assertResolved(p, null);
+    }
+
+    @Test
+    public void rejected_isNotCaughtByNonMatchingSubException() throws Exception {
+        TestException reason = newReason(TEST_REASON1);
+        Promise<Void> p = JQ.reject(reason);
+
+        BlockingDataHolder<IOException> fail1 = new BlockingDataHolder<>();
+        p = p.fail(IOException.class, new DataRejectedBaseCallback<IOException, Void>(fail1));
+
+        assertNoData(fail1, 2000);
+        Thread.sleep(500);
+        assertRejected(p, reason);
     }
 }

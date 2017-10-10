@@ -135,22 +135,33 @@ public interface Promise<V> extends Future<V> {
     }
 
     /**
-     * Callback interface for rejected promises.
-     * 
+     * Callback interface for rejected promises, handling only a sub-type of Exception.
+     *
      * @param <NV> Type of the value returned by the callback, which will be
      *            used to resolve the next promise in the chain.
+     * @param <E> Type of exception to be handled by this rejection handler
+     *
      */
-    public interface OnRejectedCallback<NV> {
+    public interface OnRejectedBaseCallback<NV, E extends Exception> {
         /**
          * The promise on which this callback was registered has been rejected.
-         * 
+         *
          * @param reason The exception that caused the promise to be rejected.
          * @return A direct value (wrapped in a {@link Value#wrap(Object)}, a
          *         new Promise or any other kind of Future.
          * @throws Exception Any exception thrown by this method will lead to
          *             the rejection of the next promise in the chain.
          */
-        Future<? extends NV> onRejected(Exception reason) throws Exception;
+        Future<? extends NV> onRejected(E reason) throws Exception;
+    }
+
+    /**
+     * Callback interface for rejected promises, catching any Exception.
+     *
+     * @param <NV> Type of the value returned by the callback, which will be
+     *            used to resolve the next promise in the chain.
+     */
+    public interface OnRejectedCallback<NV> extends OnRejectedBaseCallback<NV, Exception> {
     }
 
     /**
@@ -467,6 +478,22 @@ public interface Promise<V> extends Future<V> {
      *         callback handler.
      */
     public Promise<V> fail(OnRejectedCallback<V> onRejected);
+
+    /**
+     * Convenience method for observing the state of this promise by adding a rejection callback which
+     * will be called when the promise is rejected only with a given subclass of Exception.
+     * Analogous to a catch clause in synchronous code.
+     * Note that this method MUST be run on a thread implementing an event loop.
+     *
+     * @see #fail(OnRejectedCallback)
+     * @param <E> sub-type of Exception
+     * @param reasonClass Class of Exception to be caught by the given handler
+     * @param onRejected Rejection handler
+     * @return A new promise that will be resolved with the value
+     *         returned/rejected with the reason thrown from the supplied
+     *         callback handler.
+     */
+    public <E extends Exception> Promise<V> fail(Class<E> reasonClass, OnRejectedBaseCallback<V, E> onRejected);
 
     /**
      * Observe the progress of this promise by adding a progress callback which

@@ -658,12 +658,18 @@ public final class JQ {
 
         protected abstract void onStateChanged(int position);
 
-        public final void checkStates(final List<Promise<V>> promises) {
-            mStates = new ArrayList<>(promises.size());
+        public final void checkStates(final List<? extends Future<V>> futures) {
+            final List<Promise<V>> promises = new ArrayList<>(futures.size());
+
+            mStates = new ArrayList<>(futures.size());
             mFulfilledCount = 0;
             mRejectedCount = 0;
 
-            for (Promise<V> p : promises) {
+            // To avoid race condition we need to populate the entire list before starting observing
+            for (Future<V> f : futures) {
+                Promise<V> p = wrap(f);
+
+                promises.add(p);
                 mStates.add(p.inspect());
             }
 
@@ -701,15 +707,15 @@ public final class JQ {
      * synchronize a set of parallel operations.
      *
      * @param <V> Type of the value carried by the promises
-     * @param promises Set of promises
-     * @return A new promise, awaiting the resolution of all promises in the
+     * @param futures Set of futures (e.g. Promises or Values)
+     * @return A new promise, awaiting the resolution of all futures in the
      *         set
      */
-    public static <V> Promise<List<V>> all(final List<Promise<V>> promises) {
+    public static <V> Promise<List<V>> all(final List<? extends Future<V>> futures) {
         return defer(new DeferredHandler<List<V>>() {
             @Override
             public void handle(final Deferred<List<V>> deferred) {
-                if (promises.size() == 0) {
+                if (futures.size() == 0) {
                     deferred.resolve(new ArrayList<V>());
                 } else {
                     new PromiseListStateChecker<V>() {
@@ -728,7 +734,7 @@ public final class JQ {
                                 deferred.reject(mStates.get(position).reason);
                             }
                         }
-                    }.checkStates(promises);
+                    }.checkStates(futures);
                 }
             }
         });
@@ -741,13 +747,13 @@ public final class JQ {
      * synchronize a set of parallel operations.
      *
      * @param <V> Type of the value carried by the promises
-     * @param promises Set of promises
-     * @return A new promise, awaiting the resolution of all promises in the
+     * @param futures Set of futures (e.g. Promises or Values)
+     * @return A new promise, awaiting the resolution of all futures in the
      *         set
      */
     @SafeVarargs
-    public static <V> Promise<List<V>> all(final Promise<V>... promises) {
-        return all(Arrays.asList(promises));
+    public static <V> Promise<List<V>> all(final Future<V>... futures) {
+        return all(Arrays.asList(futures));
     }
 
     /**
@@ -758,15 +764,15 @@ public final class JQ {
      * in parallel.
      *
      * @param <V> Type of the value carried by the promises
-     * @param promises Set of promises
+     * @param futures Set of futures (e.g. Promises or Values)
      * @return A new promise, awaiting the resolution of the single quickest
-     *         promise to be resolved in the set
+     *         future to be resolved in the set
      */
-    public static <V> Promise<V> any(final List<Promise<V>> promises) {
+    public static <V> Promise<V> any(final List<? extends Future<V>> futures) {
         return defer(new DeferredHandler<V>() {
             @Override
             public void handle(final Deferred<V> deferred) {
-                if (promises.size() == 0) {
+                if (futures.size() == 0) {
                     deferred.resolve((V)null);
                 } else {
                     new PromiseListStateChecker<V>() {
@@ -782,7 +788,7 @@ public final class JQ {
                                                 + "promises were rejected."));
                             }
                         }
-                    }.checkStates(promises);
+                    }.checkStates(futures);
                 }
             }
         });
@@ -794,14 +800,14 @@ public final class JQ {
      * returned promise is hence never rejected.
      *
      * @param <V> Type of the value carried by the promises
-     * @param promises Set of promises
-     * @return A new promise, awaiting the completion of all promises in the set
+     * @param futures Set of futures (e.g. Promises or Values)
+     * @return A new promise, awaiting the completion of all futures in the set
      */
-    public static <V> Promise<List<StateSnapshot<V>>> allSettled(final List<Promise<V>> promises) {
+    public static <V> Promise<List<StateSnapshot<V>>> allSettled(final List<? extends Future<V>> futures) {
         return defer(new DeferredHandler<List<StateSnapshot<V>>>() {
             @Override
             public void handle(final Deferred<List<StateSnapshot<V>>> deferred) {
-                if (promises.size() == 0) {
+                if (futures.size() == 0) {
                     deferred.resolve(new ArrayList<StateSnapshot<V>>());
                 } else {
                     new PromiseListStateChecker<V>() {
@@ -811,7 +817,7 @@ public final class JQ {
                                 deferred.resolve(mStates);
                             }
                         }
-                    }.checkStates(promises);
+                    }.checkStates(futures);
                 }
             }
         });
@@ -825,11 +831,11 @@ public final class JQ {
      * successfully or not.
      *
      * @param <V> Type of the value carried by the promises
-     * @param promises Set of promises
+     * @param futures Set of futures (e.g. Promises or Values)
      * @return A new promise, awaiting the completion of the single quickest
-     *         promise to be completed in the set
+     *         future to be completed in the set
      */
-    public static <V> Promise<V> race(final List<Promise<V>> promises) {
+    public static <V> Promise<V> race(final List<? extends Future<V>> futures) {
         return defer(new DeferredHandler<V>() {
             @Override
             public void handle(final Deferred<V> deferred) {
@@ -844,7 +850,7 @@ public final class JQ {
                             deferred.reject(state.reason);
                         }
                     }
-                }.checkStates(promises);
+                }.checkStates(futures);
             }
         });
     }

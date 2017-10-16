@@ -51,6 +51,26 @@ public class JQTests extends AsyncTests {
     }
 
     @Test
+    public void all_isResolvedList_mixedPromisesValues() throws InterruptedException {
+        Promise<List<String>> p = JQ.all(
+                Arrays.asList(Value.wrap(TEST_VALUE1), JQ.work(new SlowTask<>(TEST_VALUE2, 1000))));
+
+        Thread.sleep(500);
+        assertPending(p);
+        Thread.sleep(1000);
+        assertResolved(p, Arrays.asList(TEST_VALUE1, TEST_VALUE2));
+    }
+
+    @Test
+    public void all_isResolvedList_onlyValues() throws InterruptedException {
+        Promise<List<String>> p = JQ.all(
+                Arrays.asList(Value.wrap(TEST_VALUE1), Value.wrap(TEST_VALUE2)));
+
+        Thread.sleep(500);
+        assertResolved(p, Arrays.asList(TEST_VALUE1, TEST_VALUE2));
+    }
+
+    @Test
     public void all_isResolvedVarArg() throws InterruptedException {
         Promise<List<String>> p = JQ.all(
                 JQ.resolve(TEST_VALUE1), JQ.resolve(TEST_VALUE2));
